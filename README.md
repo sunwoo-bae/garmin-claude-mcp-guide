@@ -17,14 +17,6 @@ Garmin mobile app does). This guide is based on the most comprehensive one,
 > Battery, and training readiness, but works on mobile immediately with no separate install. If you don't need
 > those metrics, the Strava connector alone may be enough instead of this guide.
 
-## Other options
-
-- [leewnsdud/garmin-connect-mcp](https://github.com/leewnsdud/garmin-connect-mcp) — a smaller, 24-tool server.
-  Its advantages are **shoe mileage tracking** and automatic PII filtering in responses, but it hasn't been
-  updated in a while (2026-02) and has a small user base (⭐5). If shoe mileage is all you need, it's better to
-  register your gear directly in the Garmin Connect app and query it with this guide's server via
-  `get_gear`/`get_activity_gear` rather than switching servers.
-
 ## Prerequisites
 
 - macOS + [Homebrew](https://brew.sh)
@@ -51,8 +43,8 @@ It will ask for your email/password (and an MFA code if you have one). On succes
 
 - Accounts without MFA can use the `GARMIN_EMAIL`/`GARMIN_PASSWORD` env vars instead, but the interactive method
   above is recommended for security.
-- You may see a `mobile+cffi returned 429 ... IP rate limited by Garmin` warning during auth — the server retries
-  automatically through another method. As long as you see `SUCCESS` at the end, it's fine.
+- You may see a rate-limit warning during auth — the server retries automatically through another method. As
+  long as you see `SUCCESS` at the end, it's fine.
 - The token is valid for **about 6 months**. When it expires, re-authenticate with `garmin-mcp-auth --force-reauth`.
 
 ## 3. Register with Claude Code
@@ -151,30 +143,19 @@ if the numbers look accurate.**
   - Use the `GARMIN_ENABLED_TOOLS` env var to allow only read-only tools
 - `~/.garminconnect` and `~/.garminconnect_base64` are your account access credentials. Never commit or share them.
 
-## If you want to merge in data from an old device (a different wearable)
+## Merging in data from an old device
 
-If you've ever switched devices (e.g., a different brand watch → Garmin), the old data can't be pulled in through
-this MCP server. To make use of that period's data:
-
-1. Export the data from the old app (usually CSV)
-2. Have Claude Code parse it directly and generate a summary markdown file — **don't let the Desktop/mobile
-   Claude parse the raw CSV directly.** It's often nested JSON, and an LLM can misread it while still confidently
-   stating wrong values.
-3. Upload only the cleaned-up summary file (e.g., to Google Drive), so cloud/mobile Claude reads this file
-   instead of the original.
-
-This lets mobile Claude answer accurately from **actual file content** instead of memory recall.
-
-> A note when registering a file via the Drive API: many connectors have no way to overwrite an existing file in
-> place, and no delete function either. Every content change creates a new file, so either manually delete old
-> versions or just avoid updating too frequently in the first place.
+If you switched from a different wearable to Garmin, that history won't show up through this MCP server. Export
+it from the old app (usually CSV), have Claude Code parse it into a summary markdown file rather than letting
+Desktop/mobile Claude read the raw CSV directly (it's often nested JSON and easy to misread), then point
+cloud/mobile Claude at that summary file instead of the original.
 
 ## Maintenance
 
 | Item | Method |
 |---|---|
 | Token expiry (~6 months) | Re-run `garmin-mcp-auth --force-reauth` |
-| Saving context | Allowlist only the tools you need with `GARMIN_ENABLED_TOOLS` (misspelled names are silently ignored, so check the actual list after registering) |
+| Saving context | Allowlist only the tools you need with `GARMIN_ENABLED_TOOLS` |
 | Removing the server | `claude mcp remove garmin -s user` |
 
 ## References
